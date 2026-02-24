@@ -1,5 +1,5 @@
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Any, Dict, List
-
 import asyncpg
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -14,6 +14,19 @@ from security import (
 )
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # -----------------------------
 # Auth / JWT Helpers
@@ -137,7 +150,7 @@ async def login(data: LoginRequest):
     finally:
         await conn.close()
 
-
+# Criar um admin para testes (endpoint protegido, só rodar uma vez e depois comentar ou proteger melhor)
 @app.post("/api/auth/create-admin")
 async def create_admin():
     conn = await get_connection()

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Data AI • Login</title>
+
+  <style>
+    :root{
+      --bg:#070a14;
+      --card: rgba(12, 16, 34, .78);
+      --border: rgba(255,255,255,.10);
+      --text:#eaf0ff;
+      --muted:#98a6c6;
+      --shadow: 0 24px 70px rgba(0,0,0,.55);
+      --radius: 20px;
+      --accent1:#ff7a18; /* laranja */
+      --accent2:#af002d; /* magenta */
+      --accent3:#319197; /* teal */
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: var(--sans);
+      color: var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px;
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(255,122,24,.20), transparent 55%),
+        radial-gradient(800px 520px at 85% 20%, rgba(175,0,45,.16), transparent 58%),
+        radial-gradient(1000px 700px at 50% 100%, rgba(49,145,151,.14), transparent 60%),
+        var(--bg);
+    }
+    .shell{
+      width: min(460px, 100%);
+    }
+    .brand{
+      display:flex;
+      justify-content:center;
+      margin-bottom: 14px;
+      filter: drop-shadow(0 18px 45px rgba(0,0,0,.6));
+    }
+    .brand img{
+      width: 190px;
+      height: auto;
+      user-select:none;
+      -webkit-user-drag: none;
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+    .card-head{
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .card-head h1{
+      margin:0;
+      font-size: 16px;
+      letter-spacing:.2px;
+    }
+    .pill{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.05);
+      white-space:nowrap;
+    }
+    .content{ padding: 16px 18px 18px; }
+    label{
+      display:block;
+      margin: 12px 0 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      outline:none;
+    }
+    input::placeholder{ color: rgba(152,166,198,.75); }
+    .row{ display:flex; gap: 10px; }
+    .row > *{ flex:1; }
+
+    .btn{
+      width:100%;
+      margin-top: 14px;
+      cursor:pointer;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: .2px;
+      background:
+        linear-gradient(90deg, rgba(255,122,24,.26), rgba(175,0,45,.22), rgba(49,145,151,.18));
+      transition: transform .06s ease, filter .2s ease;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn:hover{ filter: brightness(1.08); }
+
+    .meta{
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height:1.35;
+    }
+    .meta.err{ color: #ff5c7a; }
+    .meta.ok{ color: #38d39f; }
+
+    .small{
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+    .linkish{
+      cursor:pointer;
+      text-decoration: underline;
+      color: rgba(234,240,255,.85);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="brand">
+      <img src="logo-data-ai.png" alt="Data AI"/>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h1>Login</h1>
+        <span class="pill" id="apiPill">API: 127.0.0.1:8000</span>
+      </div>
+
+      <div class="content">
+        <label>Base URL da API</label>
+        <input id="apiBase" value="http://127.0.0.1:8000" placeholder="http://127.0.0.1:8000"/>
+
+        <label>Email ou Username</label>
+        <input id="login" placeholder="admin / admin@local" autocomplete="username"/>
+
+        <label>Senha</label>
+        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+
+        <button class="btn" id="btnLogin">Entrar</button>
+
+        <div class="meta" id="msg">Status: desconectado</div>
+
+        <div class="small">
+          <span class="muted">Ao entrar, você será redirecionado para a IA.</span>
+          <span class="linkish" id="btnClear">Limpar token</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const elApiBase = document.getElementById("apiBase");
+    const elApiPill = document.getElementById("apiPill");
+    const elLogin = document.getElementById("login");
+    const elPassword = document.getElementById("password");
+    const elBtnLogin = document.getElementById("btnLogin");
+    const elMsg = document.getElementById("msg");
+    const elBtnClear = document.getElementById("btnClear");
+
+    function apiBase(){
+      const v = (elApiBase.value || "").trim().replace(/\/+$/,"");
+      elApiPill.textContent = "API: " + v.replace("http://","").replace("https://","");
+      localStorage.setItem("apiBase", v);
+      return v;
+    }
+
+    function setMsg(text, kind=""){
+      elMsg.className = "meta " + kind;
+      elMsg.textContent = text;
+    }
+
+    async function checkExistingToken(){
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      setMsg("Verificando sessão existente...", "");
+      try{
+        const res = await fetch(`${apiBase()}/api/auth/me`, {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok){
+          // já logado → vai direto pro app
+          window.location.href = "app.html";
+        } else {
+          localStorage.removeItem("token");
+          setMsg("Token expirado/ inválido. Faça login novamente.", "err");
+        }
+      }catch{
+        setMsg("Erro de rede ao verificar sessão.", "err");
+      }
+    }
+
+    async function doLogin(){
+      const base = apiBase();
+      const body = {
+        login: (elLogin.value || "").trim(),
+        password: (elPassword.value || "")
+      };
+
+      if (!body.login || !body.password){
+        setMsg("Preencha login e senha.", "err");
+        return;
+      }
+
+      setMsg("Autenticando...", "");
+      elBtnLogin.disabled = true;
+
+      try{
+        const res = await fetch(`${base}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type":"application/json" },
+          body: JSON.stringify(body),
+        });
+
+        const json = await res.json().catch(()=> ({}));
+
+        if (!res.ok){
+          setMsg(`Falha no login (${res.status}): ${json.detail || "erro"}`, "err");
+          return;
+        }
+
+        localStorage.setItem("token", json.token);
+        setMsg("Login OK. Redirecionando...", "ok");
+        window.location.href = "app.html";
+
+      }catch{
+        setMsg("Erro de rede ao fazer login.", "err");
+      }finally{
+        elBtnLogin.disabled = false;
+      }
+    }
+
+    elBtnLogin.addEventListener("click", doLogin);
+    elPassword.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter") doLogin();
+    });
+    elApiBase.addEventListener("change", apiBase);
+
+    elBtnClear.addEventListener("click", ()=>{
+      localStorage.removeItem("token");
+      setMsg("Token removido. Faça login.", "");
+    });
+
+    // bootstrap
+    const saved = localStorage.getItem("apiBase");
+    if (saved) elApiBase.value = saved;
+    apiBase();
+    checkExistingToken();
+  </script>
+</body>
+</html>

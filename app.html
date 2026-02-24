@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Data AI • IA</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#070a14;
+      --panel: rgba(12, 16, 34, .78);
+      --border: rgba(255,255,255,.10);
+      --text:#eaf0ff;
+      --muted:#98a6c6;
+      --shadow: 0 24px 70px rgba(0,0,0,.55);
+      --radius: 20px;
+      --ok:#38d39f;
+      --err:#ff5c7a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: var(--sans);
+      color: var(--text);
+      padding: 24px;
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(255,122,24,.18), transparent 55%),
+        radial-gradient(800px 520px at 85% 20%, rgba(175,0,45,.14), transparent 58%),
+        radial-gradient(1000px 700px at 50% 100%, rgba(49,145,151,.12), transparent 60%),
+        var(--bg);
+    }
+    .top{
+      width:min(1200px, 100%);
+      margin: 0 auto 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      filter: drop-shadow(0 18px 45px rgba(0,0,0,.6));
+    }
+    .brand img{ width: 130px; height:auto; user-select:none; -webkit-user-drag:none; }
+    .pill{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.05);
+      white-space:nowrap;
+    }
+    .actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .btn{
+      cursor:pointer;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight: 700;
+      transition: transform .06s ease;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.danger{ background: rgba(255,92,122,.16); }
+
+    .wrap{
+      width:min(1200px, 100%);
+      margin: 0 auto;
+      display:grid;
+      grid-template-columns: 1.6fr .9fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){ .wrap{ grid-template-columns: 1fr; } }
+
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+    .head{
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+    }
+    .head h1{ margin:0; font-size: 16px; letter-spacing:.2px; }
+    .head p{ margin:0; font-size: 12px; color: var(--muted); }
+
+    .chat{
+      height: 640px;
+      display:flex;
+      flex-direction:column;
+    }
+    .body{
+      padding: 14px 16px;
+      overflow:auto;
+      flex:1;
+    }
+    .bubble{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      line-height: 1.35;
+      font-size: 13px;
+      max-width: 90%;
+    }
+    .bubble.me{ margin-left:auto; background: rgba(255,255,255,.07); }
+    .bubble.sys{ color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+    .foot{
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--border);
+      display:flex;
+      gap: 10px;
+      align-items:flex-end;
+    }
+    textarea{
+      width:100%;
+      min-height: 48px;
+      max-height: 160px;
+      resize: none;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      outline:none;
+    }
+    .send{
+      min-width: 120px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .side{
+      padding: 14px 16px 16px;
+    }
+    .meta{ margin-top: 10px; font-size: 12px; color: var(--muted); line-height:1.35; }
+    .meta.ok{ color: var(--ok); }
+    .meta.err{ color: var(--err); }
+
+    .chartBox{
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,.03);
+      display:none;
+    }
+    .chartTitle{
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="top">
+    <div class="brand">
+      <img src="logo-data-ai.png" alt="Data AI"/>
+      <div>
+        <div style="font-weight:800; letter-spacing:.2px;">Data AI</div>
+        <div style="font-size:12px; color:var(--muted);">IA para consultas + gráficos (mock)</div>
+      </div>
+    </div>
+    <div class="actions">
+      <span class="pill" id="apiPill">API: —</span>
+      <span class="pill" id="userPill">Usuário: —</span>
+      <button class="btn" id="btnCheck">Verificar /me</button>
+      <button class="btn danger" id="btnLogout">Sair</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="panel chat">
+      <div class="head">
+        <div>
+          <h1>Chat</h1>
+          <p>Use palavras como “gráfico” para receber payload de chart</p>
+        </div>
+        <span class="pill">/api/ask (JWT)</span>
+      </div>
+
+      <div class="body" id="chatBody">
+        <div class="bubble sys">Sessão validada. Faça sua pergunta.</div>
+      </div>
+
+      <div class="foot">
+        <textarea id="q" placeholder="Digite sua pergunta... (Enter envia, Shift+Enter quebra linha)"></textarea>
+        <button class="btn send" id="btnSend">Enviar</button>
+      </div>
+    </section>
+
+    <aside class="panel side">
+      <div class="head">
+        <div>
+          <h1>Resposta</h1>
+          <p>Status e gráfico</p>
+        </div>
+        <span class="pill">Chart.js</span>
+      </div>
+
+      <div class="side">
+        <div class="meta" id="status">Carregando...</div>
+
+        <div class="chartBox" id="chartBox">
+          <div class="chartTitle" id="chartTitle"></div>
+          <canvas id="chartCanvas" height="220"></canvas>
+        </div>
+
+        <div class="meta" style="margin-top:12px;">
+          🔒 Esta página exige token válido.<br/>
+          Se o token expirar, você volta ao login.
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token") || "";
+    const apiBase = (localStorage.getItem("apiBase") || "http://127.0.0.1:8000").replace(/\/+$/,"");
+
+    const elApiPill = document.getElementById("apiPill");
+    const elUserPill = document.getElementById("userPill");
+    const elStatus = document.getElementById("status");
+    const elChatBody = document.getElementById("chatBody");
+    const elQ = document.getElementById("q");
+    const elBtnSend = document.getElementById("btnSend");
+    const elBtnLogout = document.getElementById("btnLogout");
+    const elBtnCheck = document.getElementById("btnCheck");
+
+    const elChartBox = document.getElementById("chartBox");
+    const elChartTitle = document.getElementById("chartTitle");
+    const elChartCanvas = document.getElementById("chartCanvas");
+
+    let chartInstance = null;
+
+    elApiPill.textContent = "API: " + apiBase.replace("http://","").replace("https://","");
+
+    function addBubble(text, who="sys"){
+      const div = document.createElement("div");
+      div.className = "bubble " + who;
+      div.textContent = text;
+      elChatBody.appendChild(div);
+      elChatBody.scrollTop = elChatBody.scrollHeight;
+    }
+
+    function setStatus(text, kind=""){
+      elStatus.className = "meta " + kind;
+      elStatus.textContent = text;
+    }
+
+    function authHeaders(){
+      return { "Authorization": `Bearer ${token}` };
+    }
+
+    function renderChart(chart){
+      if (!chart){
+        elChartBox.style.display = "none";
+        if (chartInstance){
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+        return;
+      }
+
+      elChartTitle.textContent = `${chart.title} • tipo=${chart.type}`;
+      elChartBox.style.display = "block";
+
+      const ctx = elChartCanvas.getContext("2d");
+      if (chartInstance){
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: chart.type,
+        data: { labels: chart.labels, datasets: chart.datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: true } },
+          scales: chart.type === "pie" ? {} : { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    async function checkMe(){
+      if (!token){
+        window.location.href = "login.html";
+        return;
+      }
+
+      setStatus("Validando sessão...", "");
+      try{
+        const res = await fetch(`${apiBase}/api/auth/me`, {
+          method:"GET",
+          headers: authHeaders()
+        });
+        const json = await res.json().catch(()=> ({}));
+
+        if (!res.ok){
+          localStorage.removeItem("token");
+          setStatus(`Sessão inválida (${res.status}). Voltando ao login...`, "err");
+          setTimeout(()=> window.location.href = "login.html", 600);
+          return;
+        }
+
+        elUserPill.textContent = `Usuário: ${json.user.username} (${json.user.role})`;
+        setStatus("Sessão OK. Pronto para usar a IA.", "ok");
+      }catch{
+        setStatus("Erro de rede ao validar sessão.", "err");
+      }
+    }
+
+    async function ask(){
+      const q = (elQ.value || "").trim();
+      if (!q) return;
+
+      addBubble(q, "me");
+      elQ.value = "";
+      renderChart(null);
+
+      try{
+        const res = await fetch(`${apiBase}/api/ask`, {
+          method:"POST",
+          headers: {
+            "Content-Type":"application/json",
+            ...authHeaders()
+          },
+          body: JSON.stringify({ question: q, context: { ui:"app.html", ts: new Date().toISOString() } })
+        });
+
+        const json = await res.json().catch(()=> ({}));
+
+        if (!res.ok){
+          addBubble(`Erro (${res.status}): ${json.detail || "falha"}`, "sys");
+          setStatus("Falha ao consultar /api/ask.", "err");
+          return;
+        }
+
+        addBubble(json.answer || "(sem resposta)", "sys");
+        if (json.chart) renderChart(json.chart);
+        setStatus("Resposta recebida.", "ok");
+      }catch{
+        addBubble("Erro de rede ao chamar /api/ask.", "sys");
+        setStatus("Erro de rede.", "err");
+      }
+    }
+
+    function logout(){
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    }
+
+    elBtnSend.addEventListener("click", ask);
+    elBtnLogout.addEventListener("click", logout);
+    elBtnCheck.addEventListener("click", checkMe);
+
+    elQ.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter" && !e.shiftKey){
+        e.preventDefault();
+        ask();
+      }
+    });
+
+    // bootstrap
+    checkMe();
+  </script>
+</body>
+</html>

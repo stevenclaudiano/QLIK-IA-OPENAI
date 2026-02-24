@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QLIK IA SITE 2026 • Login & Chat</title>
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#93a4c7;
+      --text:#eaf0ff;
+      --accent:#6ea8fe;
+      --danger:#ff5c7a;
+      --ok:#38d39f;
+      --border:rgba(255,255,255,.08);
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: var(--sans);
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(110,168,254,.25), transparent 50%),
+                  radial-gradient(900px 500px at 90% 20%, rgba(56,211,159,.18), transparent 55%),
+                  radial-gradient(900px 700px at 50% 100%, rgba(255,92,122,.12), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px;
+    }
+    .wrap{
+      width:min(1100px, 100%);
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 980px){
+      .wrap{grid-template-columns: 1fr}
+    }
+    .card{
+      background: rgba(18,26,51,.92);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-header{
+      padding: 18px 18px 12px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+    }
+    .title h1{
+      margin:0;
+      font-size: 16px;
+      letter-spacing:.2px;
+    }
+    .title p{
+      margin:0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height:1.3;
+    }
+    .pill{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+      white-space:nowrap;
+    }
+    .content{padding: 16px 18px 18px}
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 12px 0 6px;
+    }
+    input, textarea, select{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      outline:none;
+    }
+    input::placeholder, textarea::placeholder{color: rgba(147,164,199,.7)}
+    textarea{min-height: 100px; resize: vertical}
+    .row{display:flex; gap:10px}
+    .row > *{flex:1}
+    .btn{
+      cursor:pointer;
+      border: 1px solid var(--border);
+      background: rgba(110,168,254,.16);
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: transform .06s ease, background .2s ease;
+      user-select:none;
+    }
+    .btn:active{transform: translateY(1px)}
+    .btn.secondary{background: rgba(255,255,255,.06)}
+    .btn.danger{background: rgba(255,92,122,.16)}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+    .msg{
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height:1.35;
+    }
+    .msg.ok{color: var(--ok)}
+    .msg.err{color: var(--danger)}
+    .chat{
+      display:flex;
+      flex-direction:column;
+      height: 620px;
+    }
+    .chat-body{
+      padding: 16px 18px;
+      overflow:auto;
+      flex:1;
+    }
+    .bubble{
+      max-width: 85%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      line-height:1.35;
+      font-size: 13px;
+    }
+    .bubble.me{
+      margin-left:auto;
+      background: rgba(110,168,254,.14);
+    }
+    .bubble.sys{
+      margin-right:auto;
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .chat-footer{
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--border);
+      display:flex;
+      gap: 10px;
+      align-items:flex-end;
+    }
+    .chat-footer textarea{
+      min-height: 48px;
+      max-height: 160px;
+      resize: none;
+    }
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap: 14px;
+      padding: 0 18px 18px;
+    }
+    @media (max-width: 980px){
+      .split{grid-template-columns: 1fr}
+    }
+    .chart-card{
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 0 18px 18px;
+      display:none;
+    }
+    .muted{color: var(--muted)}
+    .kbd{
+      font-family: var(--mono);
+      font-size: 11px;
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+    }
+    .top-actions{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- LEFT: Login -->
+    <section class="card">
+      <div class="card-header">
+        <div class="title">
+          <h1>Autenticação</h1>
+          <p>Login no FastAPI + JWT</p>
+        </div>
+        <span class="pill" id="apiBasePill">API: 127.0.0.1:8000</span>
+      </div>
+
+      <div class="content">
+        <label>Base URL da API</label>
+        <input id="apiBase" placeholder="http://127.0.0.1:8000" value="http://127.0.0.1:8000"/>
+
+        <div class="row">
+          <div>
+            <label>Login</label>
+            <input id="login" placeholder="admin" value="admin" />
+          </div>
+          <div>
+            <label>Senha</label>
+            <input id="password" placeholder="12345678" type="password" value="12345678" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="btnLogin">Entrar</button>
+          <button class="btn secondary" id="btnMe">Verificar /me</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button class="btn danger" id="btnLogout">Sair</button>
+          <button class="btn secondary" id="btnCopyToken">Copiar Token</button>
+        </div>
+
+        <div class="msg" id="authMsg">Status: <span class="muted">desconectado</span></div>
+
+        <hr style="border:0;border-top:1px solid var(--border); margin:16px 0;" />
+
+        <div class="msg sys">
+          Dica: no chat, envie uma pergunta com a palavra <b>gráfico</b> para receber um payload de chart (mock).
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Chat -->
+    <section class="card chat">
+      <div class="card-header">
+        <div class="title">
+          <h1>Chat • /api/ask</h1>
+          <p>Protegido por JWT (<span class="kbd">Authorization: Bearer</span>)</p>
+        </div>
+        <div class="top-actions">
+          <span class="pill" id="userPill">Usuário: —</span>
+        </div>
+      </div>
+
+      <div class="chat-body" id="chatBody">
+        <div class="bubble sys">Conecte-se no painel ao lado e faça uma pergunta.</div>
+      </div>
+
+      <div class="chart-card" id="chartCard">
+        <div class="muted" style="font-size:12px; margin-bottom:8px;" id="chartTitle"></div>
+        <canvas id="chartCanvas" height="160"></canvas>
+      </div>
+
+      <div class="chat-footer">
+        <textarea id="question" placeholder="Digite sua pergunta... (Enter envia, Shift+Enter quebra linha)"></textarea>
+        <button class="btn" id="btnAsk" disabled>Enviar</button>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // -----------------------------
+    // State
+    // -----------------------------
+    const state = {
+      token: localStorage.getItem("token") || "",
+      user: null,
+      chart: null,
+      chartInstance: null,
+    };
+
+    // -----------------------------
+    // DOM
+    // -----------------------------
+    const elApiBase = document.getElementById("apiBase");
+    const elApiBasePill = document.getElementById("apiBasePill");
+    const elLogin = document.getElementById("login");
+    const elPassword = document.getElementById("password");
+
+    const elBtnLogin = document.getElementById("btnLogin");
+    const elBtnLogout = document.getElementById("btnLogout");
+    const elBtnMe = document.getElementById("btnMe");
+    const elBtnCopyToken = document.getElementById("btnCopyToken");
+
+    const elAuthMsg = document.getElementById("authMsg");
+    const elUserPill = document.getElementById("userPill");
+
+    const elChatBody = document.getElementById("chatBody");
+    const elQuestion = document.getElementById("question");
+    const elBtnAsk = document.getElementById("btnAsk");
+
+    const elChartCard = document.getElementById("chartCard");
+    const elChartTitle = document.getElementById("chartTitle");
+    const elChartCanvas = document.getElementById("chartCanvas");
+
+    // -----------------------------
+    // Helpers
+    // -----------------------------
+    function apiBase() {
+      const v = (elApiBase.value || "").trim().replace(/\/+$/,"");
+      elApiBasePill.textContent = "API: " + v.replace("http://","").replace("https://","");
+      return v;
+    }
+
+    function setMsg(text, kind="") {
+      elAuthMsg.className = "msg " + kind;
+      elAuthMsg.textContent = text;
+    }
+
+    function setUserPill() {
+      if (!state.user) {
+        elUserPill.textContent = "Usuário: —";
+        return;
+      }
+      elUserPill.textContent = `Usuário: ${state.user.username} (${state.user.role})`;
+    }
+
+    function setAuthUI() {
+      elBtnAsk.disabled = !state.token;
+      if (!state.token) {
+        setMsg("Status: desconectado", "");
+        state.user = null;
+        setUserPill();
+      }
+    }
+
+    function addBubble(text, who="sys") {
+      const div = document.createElement("div");
+      div.className = "bubble " + who;
+      div.textContent = text;
+      elChatBody.appendChild(div);
+      elChatBody.scrollTop = elChatBody.scrollHeight;
+    }
+
+    function authHeaders() {
+      return state.token
+        ? { "Authorization": `Bearer ${state.token}` }
+        : {};
+    }
+
+    function safeJsonParse(s) {
+      try { return JSON.parse(s); } catch { return null; }
+    }
+
+    // -----------------------------
+    // Chart
+    // -----------------------------
+    function renderChart(chart) {
+      if (!chart) {
+        elChartCard.style.display = "none";
+        if (state.chartInstance) {
+          state.chartInstance.destroy();
+          state.chartInstance = null;
+        }
+        return;
+      }
+
+      elChartTitle.textContent = `${chart.title} • tipo=${chart.type}`;
+      elChartCard.style.display = "block";
+
+      const ctx = elChartCanvas.getContext("2d");
+      if (state.chartInstance) {
+        state.chartInstance.destroy();
+        state.chartInstance = null;
+      }
+
+      state.chartInstance = new Chart(ctx, {
+        type: chart.type,
+        data: {
+          labels: chart.labels,
+          datasets: chart.datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true }
+          },
+          scales: chart.type === "pie" ? {} : {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // -----------------------------
+    // API Calls
+    // -----------------------------
+    async function doLogin() {
+      const base = apiBase();
+      const body = {
+        login: (elLogin.value || "").trim(),
+        password: (elPassword.value || "")
+      };
+
+      setMsg("Autenticando...", "");
+      try {
+        const res = await fetch(`${base}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          setMsg(`Falha no login (${res.status}): ${json.detail || "erro"}`, "err");
+          return;
+        }
+
+        state.token = json.token;
+        localStorage.setItem("token", state.token);
+
+        setMsg("Login OK. Token salvo.", "ok");
+        addBubble("Login efetuado. Você já pode perguntar no chat.", "sys");
+        await doMe();
+        setAuthUI();
+
+      } catch (e) {
+        setMsg("Erro de rede ao fazer login.", "err");
+      }
+    }
+
+    async function doMe() {
+      const base = apiBase();
+      if (!state.token) {
+        setMsg("Sem token. Faça login.", "err");
+        return;
+      }
+
+      setMsg("Verificando sessão (/me)...", "");
+      try {
+        const res = await fetch(`${base}/api/auth/me`, {
+          method: "GET",
+          headers: { ...authHeaders() }
+        });
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          setMsg(`Sessão inválida (${res.status}): ${json.detail || "erro"}`, "err");
+          state.token = "";
+          localStorage.removeItem("token");
+          setAuthUI();
+          return;
+        }
+
+        state.user = json.user;
+        setUserPill();
+        setMsg(`Sessão OK: ${state.user.username} (${state.user.role})`, "ok");
+        setAuthUI();
+
+      } catch (e) {
+        setMsg("Erro de rede ao chamar /me.", "err");
+      }
+    }
+
+    async function doAsk() {
+      const base = apiBase();
+      const q = (elQuestion.value || "").trim();
+      if (!q) return;
+
+      if (!state.token) {
+        addBubble("Você precisa estar logado para usar o chat.", "sys");
+        return;
+      }
+
+      addBubble(q, "me");
+      elQuestion.value = "";
+      renderChart(null);
+
+      try {
+        const res = await fetch(`${base}/api/ask`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders()
+          },
+          body: JSON.stringify({
+            question: q,
+            context: {
+              ui: "index.html",
+              ts: new Date().toISOString()
+            }
+          })
+        });
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          addBubble(`Erro (${res.status}): ${json.detail || "falha ao perguntar"}`, "sys");
+          return;
+        }
+
+        addBubble(json.answer || "(sem resposta)", "sys");
+        if (json.chart) renderChart(json.chart);
+
+      } catch (e) {
+        addBubble("Erro de rede ao chamar /api/ask.", "sys");
+      }
+    }
+
+    function doLogout() {
+      state.token = "";
+      state.user = null;
+      localStorage.removeItem("token");
+      setAuthUI();
+      renderChart(null);
+      addBubble("Logout efetuado.", "sys");
+      setUserPill();
+    }
+
+    async function doCopyToken() {
+      if (!state.token) {
+        setMsg("Sem token para copiar.", "err");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(state.token);
+        setMsg("Token copiado para a área de transferência.", "ok");
+      } catch {
+        setMsg("Não consegui copiar (permissão do navegador).", "err");
+      }
+    }
+
+    // -----------------------------
+    // Events
+    // -----------------------------
+    elBtnLogin.addEventListener("click", doLogin);
+    elBtnLogout.addEventListener("click", doLogout);
+    elBtnMe.addEventListener("click", doMe);
+    elBtnCopyToken.addEventListener("click", doCopyToken);
+
+    elBtnAsk.addEventListener("click", doAsk);
+
+    elQuestion.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        doAsk();
+      }
+    });
+
+    elApiBase.addEventListener("change", () => apiBase());
+
+    // -----------------------------
+    // Bootstrap
+    // -----------------------------
+    apiBase();
+    setAuthUI();
+
+    // Se já tem token salvo, tenta validar sessão
+    if (state.token) {
+      doMe();
+    }
+  </script>
+</body>
+</html>
